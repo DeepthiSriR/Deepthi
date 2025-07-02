@@ -1,0 +1,92 @@
+﻿// Traffic Lights Pins
+int r1 = 1, y1 = 2, g1 = 3;
+int r2 = 4, y2 = 5, g2 = 6;
+int r3 = 7, y3 = 8, g3 = 9;
+int r4 = 10, y4 = 11, g4 = 12;
+// Sound Sensor Pins
+int sound1 = A0;
+int sound2 = A1;
+int sound3 = A2;
+int sound4 = A3;
+// Sound Threshold (tune based on testing)
+int soundThreshold = 500;
+void setup() {
+  // Traffic lights as OUTPUT
+  pinMode(r1, OUTPUT); pinMode(g1, OUTPUT);
+  pinMode(r2, OUTPUT); pinMode(g2, OUTPUT);
+  pinMode(r3, OUTPUT); pinMode(g3, OUTPUT);
+  pinMode(r4, OUTPUT); pinMode(g4, OUTPUT);
+  // Sound sensor pins as INPUT
+  pinMode(sound1, INPUT);
+  pinMode(sound2, INPUT);
+  pinMode(sound3, INPUT);
+  pinMode(sound4, INPUT);
+  Serial.begin(9600);
+}
+void loop() {
+  // Read sound sensor values
+  int s1 = analogRead(sound1);
+  int s2 = analogRead(sound2);
+  int s3 = analogRead(sound3);
+  int s4 = analogRead(sound4);
+  Serial.print("Sound Levels -> 1: "); Serial.print(s1);
+  Serial.print(" 2: "); Serial.print(s2);
+  Serial.print(" 3: "); Serial.print(s3);
+  Serial.print(" 4: "); Serial.println(s4);
+
+
+  // Ambulance Detection Priority
+  if (s1 > soundThreshold) {
+    allowAmbulance(1);
+  } else if (s2 > soundThreshold) {
+    allowAmbulance(2);
+  } else if (s3 > soundThreshold) {
+    allowAmbulance(3);
+  } else if (s4 > soundThreshold) {
+    allowAmbulance(4);
+  } else {
+    normalTrafficCycle();
+  }
+}
+// Function to give green signal to the ambulance side
+void allowAmbulance(int side) {
+  // Turn all signals RED
+  allRed();
+  switch (side) {
+    case 1: digitalWrite(g1, HIGH); break;
+    case 2: digitalWrite(g2, HIGH); break;
+    case 3: digitalWrite(g3, HIGH); break;
+    case 4: digitalWrite(g4, HIGH); break;
+  }
+  delay(7000); // Keep green for 7 seconds
+  allRed();    // Reset
+}
+// Normal traffic light pattern
+void normalTrafficCycle() {
+  // Side 1 Green
+  digitalWrite(g1, HIGH);
+  digitalWrite(r2, HIGH); digitalWrite(r3, HIGH); digitalWrite(r4, HIGH);
+  delay(5000);
+  digitalWrite(g1, LOW);
+  digitalWrite(r1, HIGH);
+  digitalWrite(r2, LOW); digitalWrite(g2, HIGH);
+  delay(5000);
+  digitalWrite(g2, LOW);
+  digitalWrite(r2, HIGH);
+  digitalWrite(r3, LOW); digitalWrite(g3, HIGH);
+  digitalWrite(r4, HIGH);
+  delay(5000);
+  digitalWrite(g3, LOW);
+  digitalWrite(r3, HIGH);
+  digitalWrite(r4, LOW); digitalWrite(g4, HIGH);
+  delay(5000);
+  digitalWrite(g4, LOW);
+  digitalWrite(r4, HIGH);
+}
+// Utility to turn all signals RED
+void allRed() {
+  digitalWrite(r1, HIGH); digitalWrite(g1, LOW);
+  digitalWrite(r2, HIGH); digitalWrite(g2, LOW);
+  digitalWrite(r3, HIGH); digitalWrite(g3, LOW);
+  digitalWrite(r4, HIGH); digitalWrite(g4, LOW);
+}
