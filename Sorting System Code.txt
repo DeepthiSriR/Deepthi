@@ -1,0 +1,106 @@
+﻿#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <MFRC522.h>
+#include <Servo.h>
+
+
+// LCD
+LiquidCrystal_I2C lcd(0x27, 20, 4);
+// Servo
+Servo servo1;
+Servo servo2;
+const int servoPin1 = 9;
+const int servoPin2 = 10;
+// RFID
+#define SS_PIN 10
+#define RST_PIN 9
+MFRC522 rfid(SS_PIN, RST_PIN);
+// Global Variables
+int contentCount = 0;
+int currentContent = 0;
+int previousContent = 0;
+byte tag[4];
+void setup() {
+  // Servo
+  servo1.attach(servoPin1);
+  servo2.attach(servoPin2);
+  servo1.write(0);
+  servo2.write(0);
+ // LCD
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("Initializing");
+  delay(1000);
+  lcd.clear();
+  // RFID
+  SPI.begin();
+  rfid.init();
+  rfid.request(MFRC522::PICC_REQIDL, tag);
+  lcd.clear();
+  lcd.print("Waiting for card");
+}
+void loop() {
+  // Look for new cards
+  if (rfid.isNewCardPresent()) {
+    rfid.request(MFRC522::PICC_REQIDL, tag);
+    rfid.anticoll(tag);
+
+
+    // Get the UID of the card
+    String content = "";
+    for (int i = 0; i < 4; i++) {
+      content.concat(String(tag[i], HEX));
+    }
+
+
+    // Check if the content is already detected
+    if (contentCount == 0) {
+      currentContent = 1;
+      contentCount++;
+    } else {
+      for (int i = 0; i < 4; i++) {
+        if (tag[i] != previousTag[i]) {
+          currentContent++;
+          break;
+        }
+      }
+      contentCount++;
+    }
+
+
+    // Display the result on the LCD
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Content: ");
+    lcd.print(content);
+    lcd.setCursor(0, 1);
+    lcd.print("Count: ");
+    lcd.print(contentCount);
+
+
+    // Control the servo motor based on the detected content
+    if (currentContent == 1) {
+      if (previousContent == 2) {
+        servo2.write(0);
+      }
+      servo1.write(180);
+      delay(1000);
+      servo1.write(0);
+      delay(1000);
+    } else if (currentContent == 2) {
+      if (previousContent == 1) {
+        servo1.write(0);
+      }
+      servo2.write(180);
+      delay(1000);
+      servo2.write(0);
+      delay(1000);
+    }
+    // Save the current content for the next iteration
+    for (int i = 0; i < 4; i++) {
+      previousTag[i] = tag[i];
+    }
+    previousContent = currentContent;
+  }
+}
